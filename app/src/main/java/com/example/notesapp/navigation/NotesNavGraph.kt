@@ -1,0 +1,39 @@
+package com.example.notesapp.navigation
+
+import androidx.compose.runtime.Composable
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
+import com.example.notesapp.ui.screens.DetailScreen
+import com.example.notesapp.ui.screens.TodoScreen
+
+@Composable
+fun NotesNavGraph() {
+
+    val navController = rememberNavController()
+
+    NavHost(
+        navController = navController,
+        startDestination = "list"
+    ) {
+
+        composable("list") {
+            TodoScreen(navController)
+        }
+        composable(
+            route = "detail/{id}"
+        ) { backStackEntry ->
+
+            val id =
+                backStackEntry.arguments
+                    ?.getString("id")
+                    ?.toIntOrNull() ?: 0
+
+            DetailScreen(
+                id = id,
+                navController = navController
+            )
+        }
+        }
+
+}

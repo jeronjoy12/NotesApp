@@ -11,6 +11,7 @@ import androidx.compose.ui.unit.dp
 import com.example.notesapp.ui.screens.CounterScreen
 import com.example.notesapp.ui.screens.TodoScreen
 import androidx.compose.material3.Text
+import com.example.notesapp.navigation.NotesNavGraph
 
 class MainActivity : ComponentActivity() {
 
@@ -20,17 +21,9 @@ class MainActivity : ComponentActivity() {
 
         setContent {
 
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(16.dp)
 
-            ) {
+                NotesNavGraph()
 
-                CounterScreen()
-
-                TodoScreen()
-            }
         }
     }
 }

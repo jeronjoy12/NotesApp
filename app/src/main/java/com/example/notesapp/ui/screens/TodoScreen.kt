@@ -1,6 +1,6 @@
 package com.example.notesapp.ui.screens
 
-import androidx.compose.foundation.layout.Arrangement
+
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -10,7 +10,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.runtime.*
-import androidx.compose.runtime.mutableStateListOf
+
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.compose.material3.Text
@@ -19,17 +19,16 @@ import androidx.compose.ui.Alignment
 import com.example.notesapp.ui.components.AddButton
 import com.example.notesapp.ui.components.TodoCard
 import com.example.notesapp.ui.components.TodoInput
+import androidx.navigation.NavController
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.notesapp.viewmodel.TodoViewModel
 
 @Composable
-fun TodoScreen() {
+fun TodoScreen(
+    navController: NavController
+) {
 
-    var todoText by remember {
-        mutableStateOf("")
-    }
-
-    val todos = remember {
-        mutableStateListOf<String>()
-    }
+    val todoViewModel: TodoViewModel = viewModel()
 
     Column(
         modifier = Modifier
@@ -46,9 +45,9 @@ fun TodoScreen() {
         Spacer(modifier = Modifier.height(16.dp))
 
         TodoInput(
-            value = todoText,
+            value = todoViewModel.todoText,
             onValueChange = {
-                todoText = it
+                todoViewModel.updateText(it)
             }
         )
 
@@ -56,13 +55,7 @@ fun TodoScreen() {
 
         AddButton(
             onAddClick = {
-
-                if (todoText.isNotBlank()) {
-
-                    todos.add(todoText)
-
-                    todoText = ""
-                }
+                todoViewModel.addTodo()
             }
         )
 
@@ -72,10 +65,17 @@ fun TodoScreen() {
             modifier = Modifier.fillMaxWidth()
         ) {
 
-            items(todos) { todo ->
+            items(todoViewModel.todos) { todo ->
 
                 TodoCard(
-                    todo = todo
+                    todo = todo.title,
+                    onClick = {
+
+                        navController.navigate(
+                            "detail/${todo.id}"
+                        )
+
+                    }
                 )
             }
         }
