@@ -1,6 +1,5 @@
 package com.example.notesapp.ui.screens
 
-
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -9,74 +8,155 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.runtime.*
-
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SnackbarResult
+import androidx.compose.material3.SwipeToDismissBox
+import androidx.compose.material3.Text
+import androidx.compose.material3.rememberSwipeToDismissBoxState
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import androidx.compose.material3.Text
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.ui.Alignment
+import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavController
+import com.example.notesapp.data.repository.TodoRepository
 import com.example.notesapp.ui.components.AddButton
 import com.example.notesapp.ui.components.TodoCard
 import com.example.notesapp.ui.components.TodoInput
-import androidx.navigation.NavController
-import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.notesapp.viewmodel.TodoViewModel
+import com.example.notesapp.viewmodel.TodoViewModelFactory
+import kotlinx.coroutines.launch
 
 @Composable
 fun TodoScreen(
-    navController: NavController
+    navController: NavController,
+    repository: TodoRepository
 ) {
 
-    val todoViewModel: TodoViewModel = viewModel()
+    val todoViewModel: TodoViewModel = viewModel(
+        factory = TodoViewModelFactory(repository)
+    )
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp),
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
+    val todos by todoViewModel.todos.collectAsState()
 
-        Text(
-            text = "Todo App",
-            style = MaterialTheme.typography.headlineMedium
-        )
+    val snackbarHostState = remember {
+        SnackbarHostState()
+    }
 
-        Spacer(modifier = Modifier.height(16.dp))
+    val coroutineScope = rememberCoroutineScope()
 
-        TodoInput(
-            value = todoViewModel.todoText,
-            onValueChange = {
-                todoViewModel.updateText(it)
-            }
-        )
+    Scaffold(
+        snackbarHost = {
+            SnackbarHost(
+                hostState = snackbarHostState
+            )
+        }
+    ) { padding ->
 
-        Spacer(modifier = Modifier.height(12.dp))
-
-        AddButton(
-            onAddClick = {
-                todoViewModel.addTodo()
-            }
-        )
-
-        Spacer(modifier = Modifier.height(20.dp))
-
-        LazyColumn(
-            modifier = Modifier.fillMaxWidth()
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding)
+                .padding(16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
 
-            items(todoViewModel.todos) { todo ->
+            Text(
+                text = "Todo App",
+                style = MaterialTheme.typography.headlineMedium
+            )
 
-                TodoCard(
-                    todo = todo.title,
-                    onClick = {
+            Spacer(
+                modifier = Modifier.height(16.dp)
+            )
 
-                        navController.navigate(
-                            "detail/${todo.id}"
+            TodoInput(
+                value = todoViewModel.todoText,
+                onValueChange = {
+                    todoViewModel.updateText(it)
+                }
+            )
+
+            Spacer(
+                modifier = Modifier.height(12.dp)
+            )
+
+            AddButton(
+                onAddClick = {
+                    todoViewModel.addTodo()
+                }
+            )
+
+            Spacer(
+                modifier = Modifier.height(20.dp)
+            )
+
+            LazyColumn(
+                modifier = Modifier.fillMaxWidth()
+            ) {
+
+                items(
+                    todos,
+                    key = { it.id }
+                ) { todo ->
+
+                    val dismissState =
+                        rememberSwipeToDismissBoxState(
+                            confirmValueChange = {
+
+                                todoViewModel.deleteTodo(todo)
+
+                                coroutineScope.launch {
+
+                                    val result =
+                                        snackbarHostState.showSnackbar(
+                                            message = "Todo Deleted",
+                                            actionLabel = "UNDO"
+                                        )
+
+                                    if (
+                                        result ==
+                                        SnackbarResult.ActionPerformed
+                                    ) {
+                                        todoViewModel.restoreTodo()
+                                    }
+                                }
+
+                                true
+                            }
                         )
 
+                    SwipeToDismissBox(
+                        state = dismissState,
+
+                        backgroundContent = {
+
+                            Text(
+                                text = "Delete",
+                                modifier = Modifier.padding(16.dp)
+                            )
+                        }
+
+                    ) {
+
+                        TodoCard(
+                            todo = todo.title,
+                            onClick = {
+
+                                navController.navigate(
+                                    "detail/${todo.id}"
+                                )
+                            }
+                        )
                     }
-                )
+                }
             }
         }
     }

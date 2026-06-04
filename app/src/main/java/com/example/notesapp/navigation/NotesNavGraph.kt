@@ -6,9 +6,12 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.example.notesapp.ui.screens.DetailScreen
 import com.example.notesapp.ui.screens.TodoScreen
+import com.example.notesapp.data.repository.TodoRepository
 
 @Composable
-fun NotesNavGraph() {
+fun NotesNavGraph(
+    repository: TodoRepository
+)  {
 
     val navController = rememberNavController()
 
@@ -18,7 +21,10 @@ fun NotesNavGraph() {
     ) {
 
         composable("list") {
-            TodoScreen(navController)
+            TodoScreen(
+                navController = navController,
+                repository = repository
+            )
         }
         composable(
             route = "detail/{id}"
