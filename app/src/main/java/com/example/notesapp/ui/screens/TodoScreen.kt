@@ -15,6 +15,7 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.SwipeToDismissBox
 import androidx.compose.material3.Text
+import com.example.notesapp.ui.components.SearchBar
 import androidx.compose.material3.rememberSwipeToDismissBoxState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -33,6 +34,10 @@ import com.example.notesapp.ui.components.TodoInput
 import com.example.notesapp.viewmodel.TodoViewModel
 import com.example.notesapp.viewmodel.TodoViewModelFactory
 import kotlinx.coroutines.launch
+import android.widget.Toast
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.material3.Button
 
 @Composable
 fun TodoScreen(
@@ -44,13 +49,27 @@ fun TodoScreen(
         factory = TodoViewModelFactory(repository)
     )
 
-    val todos by todoViewModel.todos.collectAsState()
+
 
     val snackbarHostState = remember {
         SnackbarHostState()
     }
 
     val coroutineScope = rememberCoroutineScope()
+    val context = LocalContext.current
+    LaunchedEffect(todoViewModel.errorMessage) {
+
+        todoViewModel.errorMessage?.let {
+
+            Toast.makeText(
+                context,
+                it,
+                Toast.LENGTH_SHORT
+            ).show()
+
+            todoViewModel.clearError()
+        }
+    }
 
     Scaffold(
         snackbarHost = {
@@ -93,71 +112,94 @@ fun TodoScreen(
                     todoViewModel.addTodo()
                 }
             )
+            Button(
+                onClick = {
+                    todoViewModel.testError()
+                }
+            ) {
+                Text("Test Error")
+            }
 
             Spacer(
                 modifier = Modifier.height(20.dp)
             )
+            SearchBar(
+                value = todoViewModel.searchQuery,
+                onValueChange = {
+                    todoViewModel.updateSearchQuery(it)
+                }
+            )
 
-            LazyColumn(
-                modifier = Modifier.fillMaxWidth()
-            ) {
+            if (todoViewModel.filteredTodos.isEmpty()) {
 
-                items(
-                    todos,
-                    key = { it.id }
-                ) { todo ->
+                Text(
+                    text = "📝 No Todos Found"
+                )
 
-                    val dismissState =
-                        rememberSwipeToDismissBoxState(
-                            confirmValueChange = {
+            } else {
 
-                                todoViewModel.deleteTodo(todo)
+                LazyColumn(
+                    modifier = Modifier.fillMaxWidth()
+                ) {
 
-                                coroutineScope.launch {
+                    items(
+                        todoViewModel.filteredTodos,
+                        key = { it.id }
+                    ) { todo ->
 
-                                    val result =
-                                        snackbarHostState.showSnackbar(
-                                            message = "Todo Deleted",
-                                            actionLabel = "UNDO"
-                                        )
+                        val dismissState =
+                            rememberSwipeToDismissBoxState(
+                                confirmValueChange = {
 
-                                    if (
-                                        result ==
-                                        SnackbarResult.ActionPerformed
-                                    ) {
-                                        todoViewModel.restoreTodo()
+                                    todoViewModel.deleteTodo(todo)
+
+                                    coroutineScope.launch {
+
+                                        val result =
+                                            snackbarHostState.showSnackbar(
+                                                message = "Todo Deleted",
+                                                actionLabel = "UNDO"
+                                            )
+
+                                        if (
+                                            result ==
+                                            SnackbarResult.ActionPerformed
+                                        ) {
+                                            todoViewModel.restoreTodo()
+                                        }
                                     }
+
+                                    true
                                 }
-
-                                true
-                            }
-                        )
-
-                    SwipeToDismissBox(
-                        state = dismissState,
-
-                        backgroundContent = {
-
-                            Text(
-                                text = "Delete",
-                                modifier = Modifier.padding(16.dp)
                             )
-                        }
 
-                    ) {
+                        SwipeToDismissBox(
+                            state = dismissState,
 
-                        TodoCard(
-                            todo = todo.title,
-                            onClick = {
+                            backgroundContent = {
 
-                                navController.navigate(
-                                    "detail/${todo.id}"
+                                Text(
+                                    text = "Delete",
+                                    modifier = Modifier.padding(16.dp)
                                 )
                             }
-                        )
+
+                        ) {
+
+                            TodoCard(
+                                todo = todo.title,
+                                onClick = {
+
+                                    navController.navigate(
+                                        "detail/${todo.id}"
+                                    )
+                                }
+                            )
+                        }
                     }
                 }
             }
         }
     }
+
 }

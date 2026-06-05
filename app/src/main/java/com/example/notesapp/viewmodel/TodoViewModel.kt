@@ -10,7 +10,7 @@ import com.example.notesapp.data.repository.TodoRepository
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
-import android.util.Log
+
 
 
 class TodoViewModel(
@@ -18,6 +18,8 @@ class TodoViewModel(
 ) : ViewModel() {
 
     var todoText by mutableStateOf("")
+        private set
+    var searchQuery by mutableStateOf("")
         private set
 
     val todos = repository
@@ -27,7 +29,17 @@ class TodoViewModel(
             started = SharingStarted.WhileSubscribed(5000),
             initialValue = emptyList()
         )
+    var errorMessage by mutableStateOf<String?>(null)
+        private set
     private var recentlyDeletedTodo: Todo? = null
+    val filteredTodos
+        get() = todos.value.filter {
+
+            it.title.contains(
+                searchQuery,
+                ignoreCase = true
+            )
+        }
 
     fun updateText(text: String) {
         todoText = text
@@ -39,11 +51,18 @@ class TodoViewModel(
 
             viewModelScope.launch {
 
-                repository.insertTodo(
-                    Todo(
-                        title = todoText
+                try {
+
+                    repository.insertTodo(
+                        Todo(
+                            title = todoText
+                        )
                     )
-                )
+
+                } catch (e: Exception) {
+
+                    errorMessage = "Database Error"
+                }
             }
 
             todoText = ""
@@ -56,7 +75,14 @@ class TodoViewModel(
 
         viewModelScope.launch {
 
-            repository.deleteTodo(todo)
+            try {
+
+                repository.deleteTodo(todo)
+
+            } catch (e: Exception) {
+
+                errorMessage = "Database Error"
+            }
         }
     }
     fun restoreTodo() {
@@ -69,5 +95,14 @@ class TodoViewModel(
 
             recentlyDeletedTodo = null
         }
+    }
+    fun updateSearchQuery(query: String) {
+        searchQuery = query
+    }
+    fun clearError() {
+        errorMessage = null
+    }
+    fun testError() {
+        errorMessage = "Database Error"
     }
 }
