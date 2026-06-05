@@ -1,5 +1,6 @@
 package com.example.notesapp.ui.screens
-
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -18,8 +19,6 @@ import androidx.compose.material3.Text
 import com.example.notesapp.ui.components.SearchBar
 import androidx.compose.material3.rememberSwipeToDismissBoxState
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
@@ -49,7 +48,13 @@ fun TodoScreen(
         factory = TodoViewModelFactory(repository)
     )
 
-
+    val todos by todoViewModel.todos.collectAsState()
+    val filteredTodos = todos.filter {
+        it.title.contains(
+            todoViewModel.searchQuery,
+            ignoreCase = true
+        )
+    }
 
     val snackbarHostState = remember {
         SnackbarHostState()
@@ -130,22 +135,11 @@ fun TodoScreen(
                 }
             )
 
-            if (todoViewModel.filteredTodos.isEmpty()) {
-
-                Text(
-                    text = "📝 No Todos Found"
-                )
-
+            if (filteredTodos.isEmpty()) {
+                Text("📝 No Todos Found")
             } else {
-
-                LazyColumn(
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-
-                    items(
-                        todoViewModel.filteredTodos,
-                        key = { it.id }
-                    ) { todo ->
+                LazyColumn {
+                    items(filteredTodos, key = { it.id }) { todo ->
 
                         val dismissState =
                             rememberSwipeToDismissBoxState(

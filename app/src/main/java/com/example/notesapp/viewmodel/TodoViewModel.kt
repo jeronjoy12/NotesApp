@@ -10,7 +10,7 @@ import com.example.notesapp.data.repository.TodoRepository
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
-
+import android.util.Log
 
 
 class TodoViewModel(
@@ -47,19 +47,25 @@ class TodoViewModel(
 
     fun addTodo() {
 
+        Log.d("TODO_DEBUG", "Button Clicked")
+
         if (todoText.isNotBlank()) {
 
             viewModelScope.launch {
 
                 try {
 
+                    Log.d("TODO_DEBUG", "Inserting: $todoText")
+
                     repository.insertTodo(
-                        Todo(
-                            title = todoText
-                        )
+                        Todo(title = todoText)
                     )
 
+                    Log.d("TODO_DEBUG", "Insert Success")
+
                 } catch (e: Exception) {
+
+                    Log.e("TODO_DEBUG", "Insert Failed", e)
 
                     errorMessage = "Database Error"
                 }
@@ -68,7 +74,6 @@ class TodoViewModel(
             todoText = ""
         }
     }
-
     fun deleteTodo(todo: Todo) {
 
         recentlyDeletedTodo = todo
